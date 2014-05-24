@@ -86,10 +86,10 @@ func (n *Netstring) ReadFrom(input io.Reader) error {
 		switch {
 		case err == io.EOF: // we still expect to read a comma, so EOF here is always incomplete
 			return Incomplete
-		case len(n.buffer) < cap(n.buffer):
-			return Incomplete
 		case err != nil:
 			return err
+		case len(n.buffer) < cap(n.buffer):
+			return Incomplete
 		}
 	}
 	if !n.complete {
