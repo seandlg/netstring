@@ -76,7 +76,8 @@ func (n *Netstring) ReadFrom(input io.Reader) error {
 	if len(n.buffer) < cap(n.buffer) {
 		// slice n.buffer to the part between len and cap
 		dest := n.buffer[len(n.buffer):cap(n.buffer)]
-		count, err := input.Read(dest)
+		var count int
+		count, err = input.Read(dest)
 
 		// slice n.buffer to add on count bytes
 		if count > 0 {
