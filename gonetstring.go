@@ -1,7 +1,7 @@
 /*
 D. J. Bernstein's netstrings for Go.
 */
-package gonetstring
+package netstring
 
 import (
 	"bytes"
