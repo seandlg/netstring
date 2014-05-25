@@ -19,7 +19,6 @@ func TestFromAndBytes(t *testing.T) {
 func TestReading(t *testing.T) {
 	n := ForReading()
 	input := bytes.NewBufferString("11:hello world,")
-	t.Log("length is: ", input.Len())
 	err := n.ReadFrom(input)
 	if err != nil {
 		t.Fatal(err)
@@ -32,3 +31,5 @@ func TestReading(t *testing.T) {
 		t.Fatal(out)
 	}
 }
+
+func TestIncomplete(t *testing.T) {} // TODO
