@@ -106,7 +106,10 @@ func (n *Netstring) readLength(input io.Reader) (int, error) {
 	for {
 		digit := make([]byte, 1)
 		_, err := input.Read(digit)
-		if err != nil {
+		switch {
+		case err == io.EOF:
+			return -1, Garbled // oops! it won't work if the digits are tuncated
+		case err != nil:
 			return -1, err
 		}
 		switch rune(digit[0]) {
