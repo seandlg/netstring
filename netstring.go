@@ -4,8 +4,10 @@ D. J. Bernstein's netstrings for Go.
 package netstring
 
 import (
+	"bufio"
 	"errors"
 	"io"
+	"strconv"
 )
 
 var Incomplete = errors.New("The netstring is incomplete")
@@ -67,10 +69,6 @@ func (n *Netstring) ReadFrom(input io.Reader) error {
 		if err != nil {
 			return err
 		}
-		err = n.readColon(input)
-		if err != nil {
-			return err
-		}
 		n.buffer = make([]byte, 0, length) // capacity stores the length
 	}
 	if len(n.buffer) < cap(n.buffer) {
@@ -104,16 +102,41 @@ func (n *Netstring) ReadFrom(input io.Reader) error {
 }
 
 func (n *Netstring) readLength(input io.Reader) (int, error) {
-	//TODO
-	return 0, nil
-}
-
-func (n *Netstring) readColon(input io.Reader) error {
-	//TODO
-	return nil
+	digits := make([]byte, 0, 10)
+	for {
+		digit := make([]byte, 1)
+		_, err := input.Read(digit)
+		if err != nil {
+			return -1, err
+		}
+		switch rune(digit[0]) {
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			digits = append(digits, digit[0])
+			if len(digits) > 10 {
+				return -1, Garbled
+			}
+		case ':':
+			length, err := strconv.Atoi(string(digits))
+			if err != nil {
+				return -1, Garbled
+			}
+			return length, nil
+		default:
+			return -1, Garbled
+		}
+	}
 }
 
 func (n *Netstring) readComma(input io.Reader) error {
-	//TODO
-	return nil
+	c, _, err := bufio.NewReaderSize(input, 1).ReadRune()
+	switch {
+	case err == io.EOF:
+		return Incomplete
+	case err != nil:
+		return err
+	case c == ',':
+		return nil
+	default:
+		return Garbled
+	}
 }
