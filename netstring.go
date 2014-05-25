@@ -14,6 +14,7 @@ var Incomplete = errors.New("The netstring is incomplete")
 var Garbled = errors.New("The netstring was not correctly formatted and could not be read")
 
 type Netstring struct {
+	digits   []byte
 	buffer   []byte
 	complete bool
 }
@@ -22,6 +23,7 @@ type Netstring struct {
 // n.IsComplete() will return true.
 func From(buf []byte) *Netstring {
 	return &Netstring{
+		digits:   make([]byte, 0, 10),
 		buffer:   buf,
 		complete: true,
 	}
@@ -30,7 +32,7 @@ func From(buf []byte) *Netstring {
 // Construct an empty netstring, for input.
 // n.IsComplete() will return false.
 func ForReading() *Netstring {
-	return &Netstring{buffer: nil, complete: false}
+	return &Netstring{digits: make([]byte, 0, 10), buffer: nil, complete: false}
 }
 
 // Returns true if the number of bytes advertized in the netstring's length have been read into its buffer.
@@ -102,24 +104,23 @@ func (n *Netstring) ReadFrom(input io.Reader) error {
 }
 
 func (n *Netstring) readLength(input io.Reader) (int, error) {
-	digits := make([]byte, 0, 10)
 	for {
 		digit := make([]byte, 1)
 		_, err := input.Read(digit)
 		switch {
 		case err == io.EOF:
-			return -1, Garbled // oops! it won't work if the digits are tuncated
+			return -1, Incomplete
 		case err != nil:
 			return -1, err
 		}
 		switch rune(digit[0]) {
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			digits = append(digits, digit[0])
-			if len(digits) > 10 {
+			n.digits = append(n.digits, digit[0])
+			if len(n.digits) > 10 {
 				return -1, Garbled
 			}
 		case ':':
-			length, err := strconv.Atoi(string(digits))
+			length, err := strconv.Atoi(string(n.digits))
 			if err != nil {
 				return -1, Garbled
 			}
