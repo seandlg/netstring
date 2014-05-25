@@ -5,10 +5,21 @@ package netstring
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"io"
 	"strconv"
 )
+
+// Convenience function, create a netstring representation of a []byte
+func MarshalFrom(buf []byte) []byte {
+	var out bytes.Buffer
+	out.WriteString(strconv.Itoa(len(buf)))
+	out.WriteRune(':')
+	out.Write(buf)
+	out.WriteRune(',')
+	return out.Bytes()
+}
 
 var Incomplete = errors.New("The netstring is incomplete")
 var Garbled = errors.New("The netstring was not correctly formatted and could not be read")
@@ -55,6 +66,19 @@ func (n *Netstring) Bytes() ([]byte, error) {
 		return n.buffer, nil
 	}
 	return nil, Incomplete
+}
+
+// Formats a netstring representation of the data in the buffer.
+func (n *Netstring) Marshal() ([]byte, error) {
+	if !n.complete {
+		return nil, Incomplete
+	}
+	var out bytes.Buffer
+	out.WriteString(strconv.Itoa(len(n.buffer)))
+	out.WriteRune(':')
+	out.Write(n.buffer)
+	out.WriteRune(',')
+	return out.Bytes(), nil
 }
 
 // Read a netstring from input.

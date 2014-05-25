@@ -5,6 +5,13 @@ import (
 	"testing"
 )
 
+func TestMarshalFrom(t *testing.T) {
+	out := MarshalFrom([]byte("hello world"))
+	if "11:hello world," != string(out) {
+		t.Fatal(out)
+	}
+}
+
 func TestFromAndBytes(t *testing.T) {
 	n := From([]byte("hello world"))
 	out, err := n.Bytes()
@@ -12,6 +19,17 @@ func TestFromAndBytes(t *testing.T) {
 		t.Fatal(err)
 	}
 	if "hello world" != string(out) {
+		t.Fatal(out)
+	}
+}
+
+func TestFromAndMarshal(t *testing.T) {
+	n := From([]byte("hello world"))
+	out, err := n.Marshal()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if "11:hello world," != string(out) {
 		t.Fatal(out)
 	}
 }
