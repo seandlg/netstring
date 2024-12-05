@@ -50,6 +50,15 @@ func TestReading(t *testing.T) {
 	}
 }
 
+func TestReadingMaxLength(t *testing.T) {
+	n := ForReadingWithMaxLength(10)
+	input := bytes.NewBufferString("11:hello world,")
+	err := n.ReadFrom(input)
+	if err != TooLarge {
+		t.Fatal(err)
+	}
+}
+
 func TestIncomplete(t *testing.T) {
 	n := ForReading()
 	input := bytes.NewBufferString("1")

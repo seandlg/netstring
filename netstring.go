@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"math"
 	"strconv"
 )
 
@@ -21,29 +22,38 @@ func MarshalFrom(buf []byte) []byte {
 	return out.Bytes()
 }
 
-var Incomplete = errors.New("The netstring is incomplete")
-var Garbled = errors.New("The netstring was not correctly formatted and could not be read")
+var (
+	Incomplete = errors.New("The netstring is incomplete")
+	Garbled    = errors.New("The netstring was not correctly formatted and could not be read")
+	TooLarge   = errors.New("The netstring length is too large")
+)
 
 type Netstring struct {
-	digits   []byte
-	buffer   []byte
-	complete bool
+	maxLength int
+	digits    []byte
+	buffer    []byte
+	complete  bool
 }
 
 // Construct a netstring wrapping a byte slice, for output.
 // n.IsComplete() will return true.
 func From(buf []byte) *Netstring {
 	return &Netstring{
-		digits:   make([]byte, 0, 10),
-		buffer:   buf,
-		complete: true,
+		digits:    make([]byte, 0, 10),
+		buffer:    buf,
+		complete:  true,
+		maxLength: math.MaxInt,
 	}
 }
 
 // Construct an empty netstring, for input.
 // n.IsComplete() will return false.
 func ForReading() *Netstring {
-	return &Netstring{digits: make([]byte, 0, 10), buffer: nil, complete: false}
+	return ForReadingWithMaxLength(math.MaxInt)
+}
+
+func ForReadingWithMaxLength(maxLength int) *Netstring {
+	return &Netstring{digits: make([]byte, 0, 10), buffer: nil, complete: false, maxLength: maxLength}
 }
 
 // Returns true if the number of bytes advertized in the netstring's length have been read into its buffer.
@@ -95,6 +105,11 @@ func (n *Netstring) ReadFrom(input io.Reader) error {
 		if err != nil {
 			return err
 		}
+
+		if length > n.maxLength {
+			return TooLarge
+		}
+
 		n.buffer = make([]byte, 0, length) // capacity stores the length
 	}
 	if len(n.buffer) < cap(n.buffer) {
